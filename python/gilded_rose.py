@@ -30,7 +30,9 @@ class GildedRose(object):
                 'Sulfuras, Hand of Ragnaros': dict(
                     delta_quality=lambda x: 0,
                     delta_sell_in=lambda x: 0,
-                    limit_quality=lambda q: q)
+                    limit_quality=lambda q: q),
+                'Conjured Mana Cake': dict(
+                    delta_quality=lambda x: 2 * delta_quality(x))
             }.get(item.name, {}))
 
             item.quality += ops.get('delta_quality')(item)
