@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 class GildedRose(object):
 
     def __init__(self, items):
@@ -7,33 +8,34 @@ class GildedRose(object):
 
     def update_quality(self):
         for item in self.items:
-            if item.name != "Aged Brie" and item.name != "Backstage passes to a TAFKAL80ETC concert":
-                if item.quality > 0:
-                    if item.name != "Sulfuras, Hand of Ragnaros":
-                        item.quality = item.quality - 1
-            else:
-                if item.quality < 50:
-                    item.quality = item.quality + 1
-                    if item.name == "Backstage passes to a TAFKAL80ETC concert":
-                        if item.sell_in < 11:
-                            if item.quality < 50:
-                                item.quality = item.quality + 1
-                        if item.sell_in < 6:
-                            if item.quality < 50:
-                                item.quality = item.quality + 1
-            if item.name != "Sulfuras, Hand of Ragnaros":
-                item.sell_in = item.sell_in - 1
-            if item.sell_in < 0:
-                if item.name != "Aged Brie":
-                    if item.name != "Backstage passes to a TAFKAL80ETC concert":
-                        if item.quality > 0:
-                            if item.name != "Sulfuras, Hand of Ragnaros":
-                                item.quality = item.quality - 1
-                    else:
-                        item.quality = item.quality - item.quality
-                else:
-                    if item.quality < 50:
-                        item.quality = item.quality + 1
+            delta_quality = lambda x: (
+                -1 if x.sell_in > 0 else
+                -2)
+            delta_quality_backstage = lambda x: (
+                -x.quality if x.sell_in <= 0 else
+                3 if x.sell_in <= 5 else
+                2 if x.sell_in <= 10 else
+                1)
+
+            ops = dict(
+                delta_quality=delta_quality,
+                delta_sell_in=lambda x: -1,
+                limit_quality=lambda q: max(0, min(q, 50)))
+
+            ops.update({
+                'Aged Brie': dict(
+                    delta_quality=lambda x: -delta_quality(x)),
+                'Backstage passes to a TAFKAL80ETC concert': dict(
+                    delta_quality=delta_quality_backstage),
+                'Sulfuras, Hand of Ragnaros': dict(
+                    delta_quality=lambda x: 0,
+                    delta_sell_in=lambda x: 0,
+                    limit_quality=lambda q: q)
+            }.get(item.name, {}))
+
+            item.quality += ops.get('delta_quality')(item)
+            item.sell_in += ops.get('delta_sell_in')(item)
+            item.quality = ops.get('limit_quality')(item.quality)
 
 
 class Item:
